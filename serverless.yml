@@ -1,0 +1,62 @@
+# serverless.yml
+service: youtube-download-bot
+
+plugins:
+  - serverless-python-requirements
+custom:
+  stage: ${opt:stage, self:provider.stage}
+  pythonRequirements:
+    dockerizePip: non-linux
+
+provider:
+  name: aws
+  runtime: python3.6
+  region: eu-west-1
+  environment:
+      ytVideos:
+          Ref: ytVideos
+      playlistId: 
+      key:
+
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:DeleteItem
+      Resource:
+        - "Fn::GetAtt": [ ytVideos, Arn ]
+    - Effect: Allow
+      Action:
+        - lambda:InvokeFunction
+      Resource:
+        - "*"
+functions:
+  cron:
+    handler: yt_api.yt_api
+    events:
+      - schedule: rate(10 minutes)
+  download:
+    handler: yt_downloader.yt_downloader
+
+
+resources:
+  # DynamoDB
+  Resources:
+    ytVideos:
+      Type: 'AWS::DynamoDB::Table'
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: yt_id
+            AttributeType: S
+
+        KeySchema:
+          -
+            AttributeName: yt_id
+            KeyType: HASH
+
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:custom.stage}-ytVideos
