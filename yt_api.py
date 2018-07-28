@@ -1,17 +1,13 @@
 import requests, json
 import boto3
 import os
-# dynaodb client
-dynamodb = boto3.resource(
-    'dynamodb')
 
+# aws clients
+dynamodb = boto3.resource('dynamodb')
 dbclient = dynamodb.Table(os.environ['ytVideos'])
-# dbclient = dynamodb.Table('dev-ytVideos')
-lambdaClient = boto3.client(
-    'lambda')
+lambdaClient = boto3.client('lambda')
 
 def yt_api(event, context):
-
     # youtbe api call
     yt_data_api = 'https://www.googleapis.com/youtube/v3/playlistItems'
     part = 'snippet'
@@ -24,8 +20,7 @@ def yt_api(event, context):
     var = json.loads(r.text)
     for i in var['items']:
         yt_id = i['snippet']['resourceId']['videoId']
-        # print(yt_id)
-        # print(i)
+        title: i['snippet']['title'],
         response = dbclient.get_item(Key={'yt_id': yt_id})
         if 'Item' in response:
             print(yt_id + ' video already exists')
@@ -36,7 +31,7 @@ def yt_api(event, context):
                         'yt_id': yt_id,
                         'publishedAt': i['snippet']['publishedAt'],
                         'channelId': i['snippet']['channelId'],
-                        'title': i['snippet']['title'],
+                        'title': title,
                         'description': i['snippet']['description'],
                         'thumbnails': i['snippet']['thumbnails']
                     }
@@ -50,7 +45,9 @@ def yt_api(event, context):
                     pass
 
             # invoke lambda for each new song. pass song ID
-            payload={'yt_id':yt_id}
+            payload={'yt_id':yt_id,
+                     'title': title}
+
             invoke = lambdaClient.invoke(
                     FunctionName='youtube-download-bot-dev-download',
                     InvocationType='Event',

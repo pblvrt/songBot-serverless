@@ -15,7 +15,7 @@ provider:
   environment:
       ytVideos:
           Ref: ytVideos
-      playlistId: 
+      playlistId:
       key:
 
   iamRoleStatements:
@@ -31,6 +31,9 @@ provider:
         - lambda:InvokeFunction
       Resource:
         - "*"
+    -Effect: Allow
+     Action:
+        - S3:PutItem
 functions:
   cron:
     handler: yt_api.yt_api
@@ -50,13 +53,13 @@ resources:
           -
             AttributeName: yt_id
             AttributeType: S
-
         KeySchema:
           -
             AttributeName: yt_id
             KeyType: HASH
-
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
         TableName: ${self:custom.stage}-ytVideos
+
+    
