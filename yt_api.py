@@ -8,6 +8,25 @@ dbclient = dynamodb.Table(os.environ['ytVideos'])
 lambdaClient = boto3.client('lambda')
 
 def yt_api(event, context):
+    # soundcloud api calls
+    #soundcloud details
+    soundcloudUserId = 'users/580297311'
+    soundcloudClientId = '/playlists?client_id=xIa292zocJP1G1huxplgJKVnK0V3Ni9D'
+    soundcloudApiEndpoint = 'http://api.soundcloud.com/'
+
+    #get all playlist and then tracks
+    request = soundcloudApiEndpoint + soundcloudUserId + soundcloudClientId
+    requestResponse = requests.get(soundcloudApiEndpoint + soundcloudUserId + soundcloudClientId)
+    #requestResponse = requests.get('http://api.soundcloud.com/users/580297311/playlists?client_id=xIa292zocJP1G1huxplgJKVnK0V3Ni9D')
+    print(request)
+    jsonResponse = requestResponse.json()
+
+    for playlist in jsonResponse:
+        print(playlist['permalink'])
+        for track in playlist['tracks']:
+            print('\t'+ track['title'] + '\n\t' + track['permalink_url'] + '\n')
+
+
     # youtbe api call
     yt_data_api = 'https://www.googleapis.com/youtube/v3/playlistItems'
     part = 'snippet'
@@ -20,7 +39,7 @@ def yt_api(event, context):
     var = json.loads(r.text)
     for i in var['items']:
         yt_id = i['snippet']['resourceId']['videoId']
-        title: i['snippet']['title'],
+        title = i['snippet']['title']
         response = dbclient.get_item(Key={'yt_id': yt_id})
         if 'Item' in response:
             print(yt_id + ' video already exists')
