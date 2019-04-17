@@ -35,7 +35,7 @@ provider:
 functions:
   cron:
     name: songbotCronCall-${self:custom.stage}
-    handler: songbotCronCall.songbotCronCall
+    handler: src/songbotCronCall.songbotCronCall
     events:
       - schedule: rate(1 day)
     iamRoleStatements:
@@ -51,7 +51,7 @@ functions:
           - "arn:aws:s3:::${self:resources.Resources.uploadBucket.Properties.BucketName}"
   download:
     name: songbotDownloader-${self:custom.stage}
-    handler: songbotDownloader.songbotDownloader
+    handler: src/songbotDownloader.songbotDownloader
     iamRoleStatements:
       - Effect: Allow
         Action:
