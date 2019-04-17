@@ -55,10 +55,10 @@ functions:
     iamRoleStatements:
       - Effect: Allow
         Action:
-          - S3:PutItem
+          - s3:PutObject
         Resource:
-          - "*"
-
+          - "arn:aws:s3:::${self:resources.Resources.uploadBucket.Properties.BucketName}"
+          - "arn:aws:s3:::*/*"
 resources:
   Resources:
     uploadBucket:
