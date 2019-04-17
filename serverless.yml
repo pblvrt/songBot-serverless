@@ -1,65 +1,70 @@
 # serverless.yml
-service: youtube-download-bot
+service: serverless-songbot
 
 plugins:
   - serverless-python-requirements
+  - serverless-iam-roles-per-function
+  - serverless-pseudo-parameters
 custom:
   stage: ${opt:stage, self:provider.stage}
   pythonRequirements:
     dockerizePip: non-linux
+  environment: ${file(env.yml):default}
 
 provider:
   name: aws
   runtime: python3.6
   region: eu-west-1
+  stage: dev
   environment:
-      ytVideos:
-          Ref: ytVideos
-      playlistId:
-      key:
+      # soundcloud env variables
+      soundcloudClientId: ${self:custom.environment.soundcloudClientId}
+      soundcloudDownloadAllPlaylist: ${self:custom.environment.soundcloudDownloadAllPlaylist}
+      soundcloudPlaylistToDownload: ${self:custom.environment.soundcloudPlaylistToDownload}
 
-  iamRoleStatements:
-    - Effect: Allow
-      Action:
-        - dynamodb:GetItem
-        - dynamodb:PutItem
-        - dynamodb:DeleteItem
-      Resource:
-        - "Fn::GetAtt": [ ytVideos, Arn ]
-    - Effect: Allow
-      Action:
-        - lambda:InvokeFunction
-      Resource:
-        - "*"
-    -Effect: Allow
-     Action:
-        - S3:PutItem
+      # youtube env variables
+      youtubeChannelId: ${self:custom.environment.youtubeChannelId}
+      youtubeApiKey: ${self:custom.environment.youtubeApiKey}
+      youtubeDonwloadAllPlaylist: ${self:custom.environment.youtubeDonwloadAllPlaylist}
+      youtubePlaylistToDownload: ${self:custom.environment.youtubePlaylistToDownload}
+      
+      # global env variables
+      s3bucket: ${self:resources.Resources.uploadBucket.Properties.BucketName}
+      downloadLambdafunction: ${self:functions.download.name}
+
 functions:
   cron:
-    handler: yt_api.yt_api
+    name: songbotCronCall-${self:custom.stage}
+    handler: songbotCronCall.songbotCronCall
     events:
-      - schedule: rate(10 minutes)
+      - schedule: rate(1 day)
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - lambda:InvokeFunction
+        Resource:
+          - "arn:aws:lambda:${self:provider.region}:#{AWS::AccountId}:function:${self:functions.download.name}"
+      - Effect: Allow
+        Action:
+          - s3:ListBucket
+        Resource:
+          - "arn:aws:s3:::${self:resources.Resources.uploadBucket.Properties.BucketName}"
   download:
-    handler: yt_downloader.yt_downloader
-
+    name: songbotDownloader-${self:custom.stage}
+    handler: songbotDownloader.songbotDownloader
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - S3:PutItem
+        Resource:
+          - "*"
 
 resources:
-  # DynamoDB
   Resources:
-    ytVideos:
-      Type: 'AWS::DynamoDB::Table'
+    uploadBucket:
+      Type: AWS::S3::Bucket
       Properties:
-        AttributeDefinitions:
-          -
-            AttributeName: yt_id
-            AttributeType: S
-        KeySchema:
-          -
-            AttributeName: yt_id
-            KeyType: HASH
-        ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
-        TableName: ${self:custom.stage}-ytVideos
+        BucketName: ${self:service}-storage
+
 
     
