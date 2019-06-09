@@ -29,7 +29,7 @@ def songbotDownloader(event, context):
             try:
                 s3client.Object(os.environ['s3bucket'], songTitle.replace("_", " ")).put(Body=open(job['filename'], 'rb'))
             except:
-                print("Uplaod filed")
+                print("Uplaod falied")
                 return                
 
     ydl_opts = {

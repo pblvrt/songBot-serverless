@@ -1,0 +1,22 @@
+{"Records": 
+    [{
+        "eventVersion": "2.1", 
+        "eventSource": "aws:s3", 
+        "awsRegion": "eu-west-1", 
+        "eventTime": "2019-06-08T16:49:47.234Z", 
+        "eventName": "ObjectCreated:Put", 
+        "userIdentity": 
+            {"principalId": "AWS:AROA2JNTK7ECOCRDUQJ6P:songbotDownloader-dev"}, 
+        "requestParameters": {"sourceIPAddress": "34.252.160.247"}, 
+        "responseElements": {"x-amz-request-id": "8EF9AF469237B621", "x-amz-id-2": "DJyaDtd8phsgIfAWC//VvqdkKh5Qr55lNRYBwp7hes6Kycm7swpiV9dZEa4FUprH8f9hcHTe2bk="}, 
+        "s3": 
+            {
+                "s3SchemaVersion": "1.0", 
+                "configurationId": "fe417a51-0ffa-4403-bf3b-79f032186656", 
+                "bucket": {
+                    "name": "serverless-songbot-storage", 
+                    "ownerIdentity": {"principalId": "AXOQL335Z2N8R"}, 
+                    "arn": "arn:aws:s3:::serverless-songbot-storage"}, 
+                    "object": {
+                        "key": "Premiere+%3A+Cervo+-+%22On+Rhythm%22", 
+                        "size": 157753, "eTag": "77a46f984cee78332aea90c0517555af", "sequencer": "005CFBE72B265BEBC1"}}}]}

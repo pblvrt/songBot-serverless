@@ -2,14 +2,12 @@
 service: serverless-songbot
 
 plugins:
-  - serverless-python-requirements
   - serverless-iam-roles-per-function
   - serverless-pseudo-parameters
+  - serverless-python-requirements
 custom:
   stage: ${opt:stage, self:provider.stage}
-  pythonRequirements:
-    dockerizePip: non-linux
-  environment: ${file(env.yml):default}
+  environment: ${file(env.yml)}
 
 provider:
   name: aws
@@ -33,6 +31,20 @@ provider:
       downloadLambdafunction: ${self:functions.download.name}
 
 functions:
+  transcode:
+    name: songbotTranscoder--${self:custom.stage}
+    handler: src/songbotTranscoder.songbotTranscoder
+    events:
+      - s3:
+        bucket: ${self:service}-storage
+        event: s3:ObjectCreated:*
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - elastictranscoder:*
+        Resource:
+        - "arn:aws:elastictranscoder:${self:provider.region}:#{AWS::AccountId}:pipeline/${self:custom.environment.PipelineId}"
+        - "arn:aws:elastictranscoder:${self:provider.region}:#{AWS::AccountId}:preset/1351620000001-300010"
   cron:
     name: songbotCronCall-${self:custom.stage}
     handler: src/songbotCronCall.songbotCronCall

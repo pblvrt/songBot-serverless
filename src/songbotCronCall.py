@@ -28,20 +28,18 @@ def songbotCronCall(event, context):
     soundcloudPlaylistToDownload = os.environ['soundcloudPlaylistToDownload']
 
     #get all playlist and then tracks
-    if soundcloudDownloadAllPlaylist == 'True':
+    if soundcloudDownloadAllPlaylist == 'Yes':
         requestResponse = requests.get(soundcloudApiEndpoint + soundcloudUserId + soundcloudClientId)
         jsonResponse = requestResponse.json()
         for playlist in jsonResponse:
             for track in playlist['tracks']:
+                print('soundcloud: ' + track['title'])
                 songList.append(Song('soundcloud', track['title'], track['permalink_url']))              
     else:
-        if soundcloudPlaylistToDownload:
-            playlistIds = soundcloudPlaylistToDownload.split('|')
-            for playlistId in playlistIds:
-                requestResponse = requests.get(soundcloudApiEndpoint + playlistId + 'playlists' + soundcloudClientId)
-                jsonResponse = requestResponse.json()
-        else:
-            print('no playlist to download.')
+        playlistIds = soundcloudPlaylistToDownload.split('|')
+        for playlistId in playlistIds:
+            requestResponse = requests.get(soundcloudApiEndpoint + playlistId + 'playlists' + soundcloudClientId)
+            jsonResponse = requestResponse.json()
 
 
     ####################  YouTube ####################
@@ -54,21 +52,19 @@ def songbotCronCall(event, context):
     youtubeDonwloadAllPlaylist = os.environ['youtubeDonwloadAllPlaylist']
     youtubePlaylistToDownload = os.environ['youtubePlaylistToDownload']
 
-    if youtubeDonwloadAllPlaylist == 'True':
+    if youtubeDonwloadAllPlaylist == 'Yes':
         pass       
     else:
-        if youtubePlaylistToDownload:
-            playlistIds = youtubePlaylistToDownload.split('|')
-            for playlistId in playlistIds:
-                payload = {'part':'snippet', 'maxResults':'50', 'playlistId':playlistId, 'key':youtubeApiKey}
-                requestResponse = requests.get(youtubeApiEndpoint + 'playlistItems', params=payload)
-                jsonResponse = requestResponse.json()
-                for song in jsonResponse['items']:
-                    youtubeSongId = song['snippet']['resourceId']['videoId']
-                    youtubeSongTitle = song['snippet']['title']
-                    songList.append(Song('youtube', youtubeSongTitle, 'https://www.youtube.com/watch?v=' + youtubeSongId))
-        else:
-            print('No playlist to download')
+        playlistIds = youtubePlaylistToDownload.split('|')
+        for playlistId in playlistIds:
+            payload = {'part':'snippet', 'maxResults':'50', 'playlistId':playlistId, 'key':youtubeApiKey}
+            requestResponse = requests.get(youtubeApiEndpoint + 'playlistItems', params=payload)
+            jsonResponse = requestResponse.json()
+            for song in jsonResponse['items']:
+                youtubeSongId = song['snippet']['resourceId']['videoId']
+                youtubeSongTitle = song['snippet']['title']
+                print('youtube: ' + youtubeSongTitle)
+                songList.append(Song('youtube', youtubeSongTitle, 'https://www.youtube.com/watch?v=' + youtubeSongId))
 
 
     # Check s3 for repeats
@@ -76,16 +72,16 @@ def songbotCronCall(event, context):
     bucketList = []
 
     for item in s3bucket.objects.all():
-        bucketList.append(item.key[:-4])
+        bucketList.append(item.key)
+    print(bucketList)
     for song in songList:
         if song.title not in bucketList:
+            print(song.title)
             lambdaPayload = {'service': song.service, 'songTitle': song.title, 'songUrl': song.url}
-            invoke = lambdaClient.invoke(
+            lambdaClient.invoke(
                 FunctionName=os.environ['downloadLambdafunction'],
                 InvocationType='Event',
                 Payload=json.dumps(lambdaPayload)
             )
-            print(invoke)
-
-
-        
+            
+    return len(songList)
